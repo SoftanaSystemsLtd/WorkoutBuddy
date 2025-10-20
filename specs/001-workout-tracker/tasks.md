@@ -157,7 +157,7 @@ description: "Task list for Personal Workout Tracker App implementation"
 - [X] T073 [P] Implement app state persistence across app restarts
 - [X] T074 Add comprehensive integration test covering complete workout flow
 - [ ] T075 [P] Performance testing and optimization for target <100ms response times
-- [ ] T076 [P] Add app icon and splash screen
+- [X] T076 [P] Add app icon and splash screen
 - [ ] T077 Final testing and bug fixes before feature completion
 
 ### Final Integration Tests (REQUIRED per constitution)

@@ -65,6 +65,15 @@ Build an APK (debug):
 flutter build apk
 ```
 
+### Splash Screen
+
+Configured via `flutter_native_splash` in `pubspec.yaml`.
+Regenerate after changes:
+```bash
+dart run flutter_native_splash:create
+```
+Customize color & image in the `flutter_native_splash` section.
+
 ## Roadmap Ideas
 
 * Add UI chip on Home screen indicating manual override is active with a one-tap revert.
@@ -72,5 +81,14 @@ flutter build apk
 * Additional statistics (PR tracking, volume graphs).
 
 ## License
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
 
-Currently unpublished / private; add a license file if planning distribution.
+You should have received a copy of the license text in the `LICENSE` file at the root of this repository.
+If not, see: https://www.gnu.org/licenses/gpl-3.0.txt
+
+Key points (summary, not a substitute for the full license):
+* You may copy, distribute, and modify the software as long as modifications are released under GPLv3.
+* Must provide source code when distributing binaries.
+* No warranty; use at your own risk.
+
+For exact terms, always read the full LICENSE file.
