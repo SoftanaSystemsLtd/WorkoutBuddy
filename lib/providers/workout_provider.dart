@@ -14,13 +14,21 @@ class WorkoutProvider extends ChangeNotifier {
 
   List<WorkoutPlan>? _workoutPlans;
   WorkoutPlan? _currentDayPlan;
+  int? _manualPlanIndex; // 0-based override when user manually selects a plan
   WorkoutSession? _activeSession;
   bool _isLoading = false;
   String? _errorMessage;
 
   // Getters
   List<WorkoutPlan>? get workoutPlans => _workoutPlans;
+
+  /// Currently active plan for display/use. If user manually selected
+  /// a plan this returns that; otherwise it returns the recommended
+  /// plan based on the rotating weekday logic.
   WorkoutPlan? get currentDayPlan => _currentDayPlan;
+  bool get isManualSelection => _manualPlanIndex != null;
+  int? get manualPlanIndex => _manualPlanIndex;
+  int get recommendedPlanIndex => getCurrentWorkoutDayIndex();
   WorkoutSession? get activeSession => _activeSession;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -36,6 +44,8 @@ class WorkoutProvider extends ChangeNotifier {
       final cachedPlans = await _storage.loadCachedWorkoutPlans();
       if (cachedPlans != null && cachedPlans.isNotEmpty) {
         _workoutPlans = cachedPlans;
+        // Attempt to load manual selection if storage impl supports it.
+        await _restoreManualSelection();
         _updateCurrentDayPlan();
         _setLoading(false);
         return;
@@ -61,6 +71,7 @@ class WorkoutProvider extends ChangeNotifier {
       }
 
       _workoutPlans = plans;
+      await _restoreManualSelection();
       await _storage.saveCachedWorkoutPlans(plans, DateTime.now());
       _updateCurrentDayPlan();
     } catch (e) {
@@ -92,9 +103,75 @@ class WorkoutProvider extends ChangeNotifier {
       return;
     }
 
+    // If user manually selected a plan, retain that selection unless out of range
+    if (_manualPlanIndex != null) {
+      if (_manualPlanIndex! < 0 || _manualPlanIndex! >= _workoutPlans!.length) {
+        _manualPlanIndex = null; // reset invalid manual selection
+      } else {
+        _currentDayPlan = _workoutPlans![_manualPlanIndex!];
+        notifyListeners();
+        return;
+      }
+    }
+
     final dayIndex = getCurrentWorkoutDayIndex();
     _currentDayPlan = _workoutPlans![dayIndex];
     notifyListeners();
+  }
+
+  /// Manually select a workout plan by its day number (1-4). This overrides
+  /// the automatic weekday mapping until [clearManualPlanSelection] is called
+  /// or plans are refreshed and the index becomes invalid.
+  void selectPlanByDayNumber(int dayNumber) {
+    if (_workoutPlans == null) {
+      return;
+    }
+    // Using block form for clarity over long line; ignore style lint.
+    // ignore: prefer_expression_function_bodies
+    final plan = _workoutPlans!.firstWhere(
+      (p) => p.dayNumber == dayNumber,
+      orElse: () => _workoutPlans!.first,
+    );
+    _manualPlanIndex = _workoutPlans!.indexOf(plan);
+    _updateCurrentDayPlan();
+  }
+
+  /// Manually select a workout plan by zero-based index.
+  void selectPlanByIndex(int index) {
+    if (_workoutPlans == null || index < 0 || index >= _workoutPlans!.length) {
+      return;
+    }
+    _manualPlanIndex = index;
+    _persistManualSelection();
+    _updateCurrentDayPlan();
+  }
+
+  /// Revert to automatic (weekday-driven) plan selection.
+  void clearManualPlanSelection() {
+    if (_manualPlanIndex != null) {
+      _manualPlanIndex = null;
+      _persistManualSelection();
+      _updateCurrentDayPlan();
+    }
+  }
+
+  Future<void> _persistManualSelection() async {
+    try {
+      await _storage.saveManualPlanIndex(_manualPlanIndex);
+    } catch (_) {
+      // Ignore persistence failures for manual selection
+    }
+  }
+
+  Future<void> _restoreManualSelection() async {
+    try {
+      final loaded = await _storage.loadManualPlanIndex();
+      if (loaded != null) {
+        _manualPlanIndex = loaded;
+      }
+    } catch (_) {
+      // Ignore load failures
+    }
   }
 
   /// Get current workout day index (0-3) based on weekday

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/workout_plan.dart';
 import '../providers/workout_provider.dart';
 import '../widgets/muscle_group_card.dart';
+import '../widgets/workout_day_picker.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -20,6 +21,11 @@ class HomeScreen extends StatelessWidget {
             context.read<WorkoutProvider>().refreshWorkoutPlans();
           },
           tooltip: 'Refresh workout plans',
+        ),
+        IconButton(
+          icon: const Icon(Icons.calendar_today),
+          onPressed: () => showWorkoutDayPicker(context),
+          tooltip: 'Select workout day',
         ),
         IconButton(
           icon: const Icon(Icons.settings),

@@ -1,0 +1,4 @@
+storeFile=keystore/my_gym.keystore
+storePassword=CHANGE_ME
+keyAlias=my_gym
+keyPassword=CHANGE_ME

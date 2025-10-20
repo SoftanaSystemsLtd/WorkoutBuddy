@@ -44,4 +44,8 @@ abstract class StorageService {
   Future<List<WorkoutPlan>?> loadCachedWorkoutPlans();
   Future<DateTime?> getCacheTimestamp();
   Future<void> clearWorkoutCache();
+
+  // Manual plan selection persistence (optional previously, now formalized)
+  Future<void> saveManualPlanIndex(int? index);
+  Future<int?> loadManualPlanIndex();
 }

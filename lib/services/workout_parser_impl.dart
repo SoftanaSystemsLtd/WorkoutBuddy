@@ -111,6 +111,7 @@ class WorkoutParserImpl implements WorkoutParserService {
   List<MuscleGroup> _parseMuscleGroups(List<String> lines) {
     final groups = <MuscleGroup>[];
     String? currentGroup;
+    String? currentCategory;
     final exercises = <Exercise>[];
     var exerciseOrder = 1;
 
@@ -125,7 +126,15 @@ class WorkoutParserImpl implements WorkoutParserService {
 
       if (exerciseMatch != null) {
         // This is an exercise
-        final exerciseName = exerciseMatch.group(1)!.trim();
+        var exerciseName = exerciseMatch.group(1)!.trim();
+        // Normalize: collapse multiple spaces
+        exerciseName = exerciseName.replaceAll(RegExp(r'\s+'), ' ');
+        // Remove trailing period
+        if (exerciseName.endsWith('.')) {
+          exerciseName = exerciseName
+              .substring(0, exerciseName.length - 1)
+              .trim();
+        }
         exercises.add(
           Exercise(
             name: exerciseName,
@@ -138,20 +147,40 @@ class WorkoutParserImpl implements WorkoutParserService {
         // Save previous group
         if (currentGroup != null && exercises.isNotEmpty) {
           groups.add(
-            MuscleGroup(name: currentGroup, exercises: List.from(exercises)),
+            MuscleGroup(
+              name: currentGroup,
+              category: currentCategory,
+              exercises: List.from(exercises),
+            ),
           );
           exercises.clear();
           exerciseOrder = 1;
         }
-
-        currentGroup = trimmed;
+        // Parse category if present (e.g. "Bicep: Outer head")
+        String header = trimmed;
+        String? category;
+        if (header.contains(':')) {
+          final parts = header.split(':');
+          category = parts.first.trim();
+          header = parts.sublist(1).join(':').trim();
+          if (header.isEmpty) {
+            header = category; // fallback if malformed "Category:" only
+            category = null;
+          }
+        }
+        currentCategory = category;
+        currentGroup = header;
       }
     }
 
     // Save last group
     if (currentGroup != null && exercises.isNotEmpty) {
       groups.add(
-        MuscleGroup(name: currentGroup, exercises: List.from(exercises)),
+        MuscleGroup(
+          name: currentGroup,
+          category: currentCategory,
+          exercises: List.from(exercises),
+        ),
       );
     }
 

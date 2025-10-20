@@ -59,6 +59,11 @@ class _FakeStorage implements StorageService {
   Future<DateTime?> getCacheTimestamp() async => DateTime.now();
   @override
   Future<void> clearWorkoutCache() async => _cachedPlans = null;
+
+  @override
+  Future<void> saveManualPlanIndex(int? index) async {}
+  @override
+  Future<int?> loadManualPlanIndex() async => null;
 }
 
 void main() {

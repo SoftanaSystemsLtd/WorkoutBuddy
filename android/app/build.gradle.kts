@@ -5,6 +5,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+
 android {
     namespace = "com.example.my_gym"
     compileSdk = flutter.compileSdkVersion
@@ -21,7 +22,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.my_gym"
+        applicationId = "com.softanasystems.my_gym"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -30,10 +31,13 @@ android {
         versionName = flutter.versionName
     }
 
+    // Reverted: no custom release signing; release uses debug keys for now.
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            isMinifyEnabled = false
+            // Explicitly disable resource shrinking to avoid Gradle requiring code shrinking.
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
         }
     }

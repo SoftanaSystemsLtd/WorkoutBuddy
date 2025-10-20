@@ -12,6 +12,7 @@ const String _keyHistory = 'workout_history';
 const String _keySettings = 'app_settings';
 const String _keyCachedPlans = 'cached_workout_plans';
 const String _keyCacheTimestamp = 'cache_timestamp';
+const String _keyManualPlanIndex = 'manual_plan_index';
 
 /// Concrete implementation using shared_preferences for persistence.
 class StorageServiceImpl implements StorageService {
@@ -228,4 +229,18 @@ class StorageServiceImpl implements StorageService {
     await _preferences.remove(_keyCachedPlans);
     await _preferences.remove(_keyCacheTimestamp);
   }
+
+  // Manual selection persistence helpers
+  @override
+  Future<void> saveManualPlanIndex(int? index) async {
+    if (index == null) {
+      await _preferences.remove(_keyManualPlanIndex);
+    } else {
+      await _preferences.setInt(_keyManualPlanIndex, index);
+    }
+  }
+
+  @override
+  Future<int?> loadManualPlanIndex() async =>
+      _preferences.getInt(_keyManualPlanIndex);
 }
