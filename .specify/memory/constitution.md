@@ -1,50 +1,61 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version change: Initial → 1.0.0
+- New constitution for Flutter mobile application
+- Added principles: Widget-Centric Architecture, State Management Clarity, Performance-First Design, Testing Discipline, User Experience Excellence
+- Added sections: Mobile Development Standards, Quality Assurance Framework
+- Templates requiring updates: ✅ tasks-template.md updated (testing requirements, Flutter paths)
+- Follow-up TODOs: None
+-->
+
+# My Gym Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Widget-Centric Architecture
+Every UI component must be implemented as a self-contained, reusable widget with clear responsibilities. Widgets must follow the single responsibility principle, be composable, and maintain clear separation between presentation and business logic. State must be managed at the appropriate widget level - local state in StatefulWidget, shared state through Provider/Bloc patterns.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Rationale**: Flutter's widget architecture enables maintainable, testable, and reusable UI components when properly structured.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. State Management Clarity (NON-NEGOTIABLE)
+Application state must be managed through established patterns (Provider, Bloc, or Riverpod). Global state, local state, and ephemeral state must be clearly distinguished and managed appropriately. State mutations must be predictable and traceable for debugging purposes.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: Proper state management prevents bugs, enables testing, and ensures application scalability as features grow.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Performance-First Design
+All features must consider mobile performance constraints from design phase. Image optimization, efficient list rendering (ListView.builder), appropriate widget rebuilds, and memory management are mandatory. Performance testing on target devices required before feature completion.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: Mobile users expect responsive applications; poor performance directly impacts user retention and app store ratings.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Testing Discipline
+Unit tests for business logic, widget tests for UI components, and integration tests for user workflows are required. Test coverage must be maintained above 80% for business logic. Golden tests for critical UI components when visual consistency is essential.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Mobile applications require high reliability; comprehensive testing prevents regressions and ensures quality across diverse devices.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. User Experience Excellence
+Features must prioritize user experience with appropriate loading states, error handling, offline capabilities where applicable, and accessibility compliance (screen readers, color contrast). User feedback must be immediate and clear.
+
+**Rationale**: Mobile applications compete on user experience; poor UX leads to immediate uninstallation and negative reviews.
+
+## Mobile Development Standards
+
+**Platform Support**: iOS 12.0+ and Android API 21+ (following Flutter's minimum requirements)
+**Screen Adaptability**: Responsive design for phones and tablets, portrait and landscape orientations
+**Accessibility**: WCAG 2.1 AA compliance with semantic widgets and proper contrast ratios
+**Offline Handling**: Graceful degradation with cached data and clear offline indicators
+**Security**: Secure storage for sensitive data, proper API authentication, and data encryption in transit
+
+## Quality Assurance Framework
+
+**Code Review**: All PRs require review with focus on widget structure, state management patterns, and performance implications
+**Device Testing**: Features must be tested on minimum 2 physical devices (iOS and Android) before release
+**Performance Monitoring**: Regular profiling for memory leaks, frame drops, and app startup time
+**User Testing**: Critical user flows must undergo usability testing before major releases
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other development practices and guidelines. All feature implementations, code reviews, and technical decisions must verify compliance with these principles. Any complexity that violates these principles must be explicitly justified with architectural decision records.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendments require team discussion, technical impact assessment, and migration plan for existing code. Template consistency must be maintained across all `.specify/templates/` files when principles change.
+
+**Version**: 1.0.0 | **Ratified**: 2025-10-20 | **Last Amended**: 2025-10-20
