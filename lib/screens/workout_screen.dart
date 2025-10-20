@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/workout_session.dart';
 
 import '../providers/workout_provider.dart';
+import '../models/workout_plan.dart';
 import '../services/timer_service.dart';
 import '../widgets/exercise_tracker.dart';
 import '../widgets/workout_timer.dart';
@@ -86,24 +88,23 @@ class WorkoutScreen extends StatelessWidget {
     WorkoutProvider provider,
   ) {
     final session = provider.activeSession!;
-    final plan = provider.workoutPlans?.firstWhere(
-      (p) => p.id == session.workoutPlanId,
-    );
-
+    WorkoutPlan? plan;
+    final plans = provider.workoutPlans;
+    if (plans != null) {
+      try {
+        plan = plans.firstWhere((p) => p.id == session.workoutPlanId);
+      } catch (_) {
+        plan = null;
+      }
+    }
     if (plan == null) {
       return const Scaffold(
         body: Center(child: Text('Workout plan not found')),
       );
     }
-
-    // Flatten all exercises from all muscle groups
-    final allExercises = plan.muscleGroups
-        .expand((group) => group.exercises)
-        .toList();
-
+    final allExercises = plan.muscleGroups.expand((g) => g.exercises).toList();
     final completedCount = session.completedExercises.length;
     final totalCount = allExercises.length;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(plan.name),
@@ -117,7 +118,6 @@ class WorkoutScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Timer and progress header
           Container(
             padding: const EdgeInsets.all(16),
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -136,33 +136,53 @@ class WorkoutScreen extends StatelessWidget {
               ],
             ),
           ),
-
-          // Exercise list
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: allExercises.length,
               itemBuilder: (context, index) {
                 final exercise = allExercises[index];
-                final existingSets = provider.getCompletedSets(exercise.name);
-
+                final isCompleted = provider.isExerciseCompleted(exercise.name);
+                final sets = isCompleted
+                    ? provider.getCompletedSets(exercise.name)
+                    : provider.getDraftSets(exercise.name);
+                final muscleGroupName = exercise.muscleGroup.isNotEmpty
+                    ? exercise.muscleGroup
+                    : plan!.muscleGroups
+                          .firstWhere(
+                            (g) => g.exercises.contains(exercise),
+                            orElse: () => plan!.muscleGroups.first,
+                          )
+                          .name;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: ExerciseTracker(
+                    key: ValueKey(exercise.name),
                     exercise: exercise,
-                    existingSets: existingSets,
-                    onSetsChanged: (sets) {
-                      // Auto-save sets as they're entered
-                      if (sets.isNotEmpty) {
-                        provider.recordExercise(exercise.name, sets);
-                      }
-                    },
-                    onComplete: () {
-                      // Exercise marked complete
+                    isCompleted: isCompleted,
+                    existingSets: sets,
+                    muscleGroupName: muscleGroupName,
+                    onSetsChanged: (updated) =>
+                        provider.updateDraftSets(exercise.name, updated),
+                    onComplete: () async {
+                      final draft = provider.getDraftSets(exercise.name) ?? [];
+                      final finalSets = draft.isEmpty
+                          ? [const SetData(reps: 1)]
+                          : draft;
+                      await provider.completeExercise(exercise.name, finalSets);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('${exercise.name} completed!'),
                           duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    onUncomplete: () async {
+                      await provider.uncompleteExercise(exercise.name);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${exercise.name} unchecked'),
+                          duration: const Duration(milliseconds: 800),
                         ),
                       );
                     },

@@ -9,6 +9,9 @@ class ExerciseTracker extends StatefulWidget {
     required this.onSetsChanged,
     this.existingSets,
     this.onComplete,
+    this.onUncomplete,
+    this.isCompleted = false,
+    this.muscleGroupName,
     super.key,
   });
 
@@ -16,6 +19,9 @@ class ExerciseTracker extends StatefulWidget {
   final List<SetData>? existingSets;
   final Function(List<SetData>) onSetsChanged;
   final VoidCallback? onComplete;
+  final VoidCallback? onUncomplete; // Called when an exercise is unchecked
+  final bool isCompleted; // Initial completed state from provider
+  final String? muscleGroupName; // Display identifier for muscle group
 
   @override
   State<ExerciseTracker> createState() => _ExerciseTrackerState();
@@ -23,11 +29,12 @@ class ExerciseTracker extends StatefulWidget {
 
 class _ExerciseTrackerState extends State<ExerciseTracker> {
   final List<_SetEntry> _sets = [];
-  bool _isCompleted = false;
+  late bool _isCompleted;
 
   @override
   void initState() {
     super.initState();
+    _isCompleted = widget.isCompleted;
     if (widget.existingSets != null && widget.existingSets!.isNotEmpty) {
       _sets.addAll(widget.existingSets!.map(_SetEntry.fromSetData));
     } else {
@@ -57,19 +64,28 @@ class _ExerciseTrackerState extends State<ExerciseTracker> {
     setState(() {
       _isCompleted = !_isCompleted;
     });
-    if (_isCompleted && widget.onComplete != null) {
-      widget.onComplete!();
+    if (_isCompleted) {
+      if (widget.onComplete != null) {
+        widget.onComplete!();
+      }
+    } else {
+      if (widget.onUncomplete != null) {
+        widget.onUncomplete!();
+      }
     }
   }
 
   void _notifyChanges() {
     final data = _sets
         .map(
-          (e) => SetData(
-            reps: int.tryParse(e.repsController.text) ?? 0,
-            weight: double.tryParse(e.weightController.text),
-          ),
+          (e) => (int.tryParse(e.repsController.text) ?? 0) > 0
+              ? SetData(
+                  reps: int.parse(e.repsController.text),
+                  weight: double.tryParse(e.weightController.text),
+                )
+              : null,
         )
+        .whereType<SetData>()
         .toList();
     widget.onSetsChanged(data);
   }
@@ -111,6 +127,21 @@ class _ExerciseTrackerState extends State<ExerciseTracker> {
                     ),
                   ),
                 ),
+                if (widget.muscleGroupName != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Tooltip(
+                      message: 'Muscle group',
+                      child: Chip(
+                        label: Text(
+                          widget.muscleGroupName!,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
               ],
             ),
             if (!_isCompleted) ...[

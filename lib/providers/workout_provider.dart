@@ -18,6 +18,8 @@ class WorkoutProvider extends ChangeNotifier {
   WorkoutSession? _activeSession;
   bool _isLoading = false;
   String? _errorMessage;
+  // Draft (in-progress, not yet marked complete) sets per exercise during a session
+  final Map<String, List<SetData>> _draftSets = {};
 
   // Getters
   List<WorkoutPlan>? get workoutPlans => _workoutPlans;
@@ -246,6 +248,73 @@ class WorkoutProvider extends ChangeNotifier {
     await _storage.saveActiveSession(_activeSession!);
     notifyListeners();
   }
+
+  /// Explicitly mark an exercise as completed (idempotent). Replaces existing entry if present.
+  Future<void> completeExercise(String exerciseName, List<SetData> sets) async {
+    if (_activeSession == null) {
+      return;
+    }
+    // Ensure there is at least one valid set (reps > 0) to satisfy invariants.
+    final sanitized = sets.where((s) => s.reps > 0).toList();
+    if (sanitized.isEmpty) {
+      sanitized.add(const SetData(reps: 1));
+    }
+    // Remove any prior draft/completion of same exercise
+    final updated = List<ExerciseSet>.from(_activeSession!.completedExercises)
+      ..removeWhere((e) => e.exerciseName == exerciseName)
+      ..add(
+        ExerciseSet(
+          exerciseName: exerciseName,
+          sets: sanitized,
+          completedAt: DateTime.now(),
+        ),
+      );
+    _activeSession = _activeSession!.copyWith(completedExercises: updated);
+    // Clear draft once completed
+    _draftSets.remove(exerciseName);
+    await _storage.saveActiveSession(_activeSession!);
+    notifyListeners();
+  }
+
+  /// Unmark a previously completed exercise; retains draft sets only in UI state.
+  Future<void> uncompleteExercise(String exerciseName) async {
+    if (_activeSession == null) {
+      return;
+    }
+    // Find existing completed sets to move back to draft
+    final existing = _activeSession!.completedExercises.firstWhere(
+      (e) => e.exerciseName == exerciseName,
+      orElse: () => ExerciseSet(
+        exerciseName: '',
+        sets: const [],
+        completedAt: DateTime.now(),
+      ),
+    );
+    if (existing.exerciseName.isNotEmpty && existing.sets.isNotEmpty) {
+      _draftSets[exerciseName] = existing.sets;
+    }
+    final updated = List<ExerciseSet>.from(_activeSession!.completedExercises)
+      ..removeWhere((e) => e.exerciseName == exerciseName);
+    _activeSession = _activeSession!.copyWith(completedExercises: updated);
+    await _storage.saveActiveSession(_activeSession!);
+    notifyListeners();
+  }
+
+  /// Update draft sets for an exercise (not marking completion yet).
+  void updateDraftSets(String exerciseName, List<SetData> sets) {
+    if (_activeSession == null) {
+      return;
+    }
+    if (sets.isEmpty) {
+      _draftSets.remove(exerciseName); // Remove empty drafts
+    } else {
+      _draftSets[exerciseName] = sets;
+    }
+    notifyListeners();
+  }
+
+  /// Retrieve draft (uncompleted) sets for an exercise.
+  List<SetData>? getDraftSets(String exerciseName) => _draftSets[exerciseName];
 
   /// Check if exercise is completed in current session
   bool isExerciseCompleted(String exerciseName) {

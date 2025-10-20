@@ -14,19 +14,50 @@ import 'services/workout_parser_impl.dart';
 import 'utils/app_theme.dart';
 import 'widgets/bottom_navigation.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Do NOT perform heavy async work here; allow first frame ASAP so native splash disappears quickly.
+  runApp(const AppBootstrap());
+}
 
-  // Initialize services
-  final storage = StorageServiceImpl();
-  await storage.init();
+/// Bootstraps async initialization inside widget tree so splash screen duration is minimized.
+class AppBootstrap extends StatelessWidget {
+  const AppBootstrap({super.key});
 
-  final parser = WorkoutParserImpl();
-  final settingsService = SettingsServiceImpl(storage);
+  Future<_Services> _initServices() async {
+    final storage = StorageServiceImpl();
+    await storage.init(); // SharedPreferences init
+    final parser = WorkoutParserImpl();
+    final settingsService = SettingsServiceImpl(storage);
+    return _Services(storage, parser, settingsService);
+  }
 
-  runApp(
-    MyApp(storage: storage, parser: parser, settingsService: settingsService),
+  @override
+  Widget build(BuildContext context) => FutureBuilder<_Services>(
+    future: _initServices(),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        // Lightweight placeholder while services init (native splash is already gone).
+        return const MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(body: Center(child: CircularProgressIndicator())),
+        );
+      }
+      final s = snapshot.data!;
+      return MyApp(
+        storage: s.storage,
+        parser: s.parser,
+        settingsService: s.settingsService,
+      );
+    },
   );
+}
+
+class _Services {
+  _Services(this.storage, this.parser, this.settingsService);
+  final StorageServiceImpl storage;
+  final WorkoutParserImpl parser;
+  final SettingsServiceImpl settingsService;
 }
 
 class MyApp extends StatelessWidget {
@@ -55,7 +86,7 @@ class MyApp extends StatelessWidget {
       // HistoryProvider will be added in later phase
     ],
     child: MaterialApp(
-      title: 'My Gym',
+      title: 'MyGym',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       home: const RootScaffold(),
